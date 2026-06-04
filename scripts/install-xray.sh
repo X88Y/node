@@ -112,8 +112,11 @@ compile_xray_from_source() {
     BUILD_DIR=$(mktemp -d)
     git clone -b xhttp-sessionid --single-branch https://github.com/XTLS/Xray-core.git "$BUILD_DIR"
     
-    echo "Building Xray binary..."
+    echo "Adjusting go version in go.mod..."
     cd "$BUILD_DIR"
+    sed -i 's/^go 1\.26/go 1.23/g' go.mod
+
+    echo "Building Xray binary..."
     CGO_ENABLED=0 go build -o "${TMP_DIRECTORY}/xray" -trimpath -ldflags="-s -w" ./main
     
     echo "Xray compiled successfully."
