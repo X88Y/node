@@ -104,26 +104,39 @@ extract_xray() {
 }
 
 compile_xray_from_source() {
-    echo "Installing build tools and Go..."
-    # We install go, git, and compilation dependencies.
-    apk add --no-cache go git build-base
+    echo "Installing build tools, git, gcompat, curl, and tar..."
+    apk add --no-cache git build-base curl gcompat tar
+
+    # Determine Go binary architecture
+    GO_ARCH="amd64"
+    if [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "arm64" ]; then
+        GO_ARCH="arm64"
+    fi
+
+    echo "Downloading official Go 1.26.4 binary for ${GO_ARCH}..."
+    GO_DIR=$(mktemp -d)
+    curl -sL "https://go.dev/dl/go1.26.4.linux-${GO_ARCH}.tar.gz" | tar -xz -C "$GO_DIR"
+    
+    # Add Go binary to PATH
+    export PATH="${GO_DIR}/go/bin:${PATH}"
+    
+    echo "Using Go version:"
+    go version
 
     echo "Cloning XTLS/Xray-core (branch xhttp-sessionid)..."
     BUILD_DIR=$(mktemp -d)
     git clone -b xhttp-sessionid --single-branch https://github.com/XTLS/Xray-core.git "$BUILD_DIR"
     
-    echo "Adjusting go version in go.mod..."
-    cd "$BUILD_DIR"
-    sed -i 's/^go 1\.26/go 1.23/g' go.mod
-
     echo "Building Xray binary..."
+    cd "$BUILD_DIR"
     CGO_ENABLED=0 go build -o "${TMP_DIRECTORY}/xray" -trimpath -ldflags="-s -w" ./main
     
     echo "Xray compiled successfully."
-    # Clean up the build dependencies
+    # Clean up the build dependencies and Go install
     cd /
     rm -rf "$BUILD_DIR"
-    apk del go git build-base
+    rm -rf "$GO_DIR"
+    apk del git build-base curl gcompat tar
 }
 
 place_xray() {
