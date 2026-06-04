@@ -132,11 +132,10 @@ compile_xray_from_source() {
     CGO_ENABLED=0 go build -o "${TMP_DIRECTORY}/xray" -trimpath -ldflags="-s -w" ./main
     
     echo "Xray compiled successfully."
-    # Clean up the build dependencies and Go install
+    # Clean up the build directory and Go install
     cd /
     rm -rf "$BUILD_DIR"
     rm -rf "$GO_DIR"
-    apk del git build-base curl gcompat tar
 }
 
 place_xray() {
